@@ -68,7 +68,7 @@ jobs:
       - name: Build x-ui
         run: |
           mkdir -p build_assets
-          go build -v -o build_assets/x-ui -trimpath -ldflags "-s -w -buildid=" ./main
+          go build -v -o build_assets/x-ui main.go
     
       - name: Prepare to release
         run: |
