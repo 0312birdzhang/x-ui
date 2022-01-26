@@ -1,0 +1,120 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+  push:
+    branches:
+      - main
+    paths:
+      - "**/*.go"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/*.yml"
+  
+jobs:
+  build:
+    strategy:
+      matrix:
+        # Include amd64 on all platforms.
+        goos: [linux]
+        goarch: [amd64, 386]
+        
+        include:
+          # BEGIN Linux ARM 5 6 7
+          - goos: linux
+            goarch: arm
+            goarm: 7
+          - goos: linux
+            goarch: arm
+            goarm: 6
+          - goos: linux
+            goarch: arm
+            goarm: 5
+          # END Linux ARM 5 6 7
+          # BEGIN riscv64 & ARM64
+          - goos: linux
+            goarch: arm64
+          
+          
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+    env:
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+      GOARM: ${{ matrix.goarm }}
+      CGO_ENABLED: 0
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@v2
+
+      - name: Show workflow information 
+        id: get_filename
+        run: |
+          export _NAME=$(jq ".[\"$GOOS-$GOARCH$GOARM$GOMIPS\"].friendlyName" -r < .github/build/friendly-filenames.json)
+          echo "GOOS: $GOOS, GOARCH: $GOARCH, GOARM: $GOARM, GOMIPS: $GOMIPS, RELEASE_NAME: $_NAME"
+          echo "::set-output name=ASSET_NAME::$_NAME"
+          echo "ASSET_NAME=$_NAME" >> $GITHUB_ENV
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.17.6
+
+      - name: Get project dependencies
+        run: go mod download
+      
+      - name: Build x-ui
+        run: |
+          mkdir -p build_assets
+          go build -v -o build_assets/x-ui -trimpath -ldflags "-s -w -buildid=" ./main
+    
+      - name: Prepare to release
+        run: |
+          cp ${GITHUB_WORKSPACE}/README.md ./build_assets/README.md
+          cp ${GITHUB_WORKSPACE}/LICENSE ./build_assets/LICENSE
+          cp ${GITHUB_WORKSPACE}/x-ui.service ./build_assets/x-ui.service
+          cp ${GITHUB_WORKSPACE}/x-ui.sh ./build_assets/x-ui.sh
+          mkdir -p ./build_assets/bin
+          LASTEST_XRAY_TAG="$(curl -sL "https://api.github.com/repos/XTLS/Xray-core/releases" | jq -r ".[0].tag_name" || echo "latest")"
+          # https://github.com/XTLS/Xray-core/releases/download/v1.5.2/Xray-linux-arm32-v5.zip
+          XRAY_FILE_NAME="Xray-${ASSET_NAME}.zip"
+          echo -e "Downloading ${XRAY_FILE_NAME}..."
+          curl -L "https://github.com/XTLS/Xray-core/releases/download/${LASTEST_XRAY_TAG}/${XRAY_FILE_NAME}" -o ./build_assets/bin/${XRAY_FILE_NAME}
+          pushd ./build_assets/bin
+          unzip ${XRAY_FILE_NAME}
+          rm -rf ${XRAY_FILE_NAME} LICENSE README.md
+          mv xray xray-${ASSET_NAME}
+          popd
+
+      - name: Create ZIP archive
+        shell: bash
+        run: |
+          pushd build_assets || exit 1
+          touch -mt $(date +%Y01010000) *
+          zip -9vr ../x-ui-$ASSET_NAME.zip .
+          popd || exit 1
+          FILE=./x-ui-$ASSET_NAME.zip
+          DGST=$FILE.dgst
+          for METHOD in {"md5","sha1","sha256","sha512"}
+          do
+            openssl dgst -$METHOD $FILE | sed 's/([^)]*)//g' >>$DGST
+          done
+      - name: Change the name
+        run: |
+          mv build_assets x-ui-$ASSET_NAME
+      - name: Upload files to Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: x-ui-${{ steps.get_filename.outputs.ASSET_NAME }}
+          path: |
+            ./x-ui-${{ steps.get_filename.outputs.ASSET_NAME }}/*
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        if: github.event_name == 'release'
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./x-ui-${{ steps.get_filename.outputs.ASSET_NAME }}.zip*
+          tag: ${{ github.ref }}
+          file_glob: true
