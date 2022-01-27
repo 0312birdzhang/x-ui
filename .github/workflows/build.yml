@@ -67,16 +67,18 @@ jobs:
         run: |
           go mod download
           sudo apt update
-          sudo apt install -y libblkid-dev gcc gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-arm-linux-gnueabi g++-arm-linux-gnueabi gcc-multilib
+          sudo apt install -y libblkid-dev gcc gcc-multilib
       
       - name: Build x-ui
         run: |
           if [[ $GOARCH == 'arm64' ]]; then
               echo "CC=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
               echo "::set-env CC=aarch64-linux-gnu-gcc"
+              sudo apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
           elif [[ $GOARCH == 'arm' ]]; then
               echo "CC=arm-linux-gnu-gcc" >> "$GITHUB_ENV"
               echo "::set-env CC=arm-linux-gnu-gcc"
+              sudo apt install -y  gcc-arm-linux-gnueabi g++-arm-linux-gnueabi 
           else
               echo "skip others"
           fi
