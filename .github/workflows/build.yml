@@ -45,7 +45,7 @@ jobs:
       GOOS: ${{ matrix.goos }}
       GOARCH: ${{ matrix.goarch }}
       GOARM: ${{ matrix.goarm }}
-      CGO_ENABLED: 0
+      #CGO_ENABLED: 0
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v2
@@ -63,12 +63,15 @@ jobs:
           go-version: ^1.17.6
 
       - name: Get project dependencies
-        run: go mod download
+        run: |
+          go mod download
+          apt update
+          apt install -y libblkid-dev gcc 
       
       - name: Build x-ui
         run: |
           mkdir -p build_assets
-          go build -v -o build_assets/x-ui -ldflags "-linkmode external -extldflags '-static' -s -w" main.go
+          go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build_assets/x-ui main.go
     
       - name: Prepare to release
         run: |
