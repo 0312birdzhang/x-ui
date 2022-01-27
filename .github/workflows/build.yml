@@ -67,7 +67,7 @@ jobs:
         run: |
           go mod download
           sudo apt update
-          sudo apt install -y libblkid-dev gcc gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
+          sudo apt install -y libblkid-dev gcc gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-arm-linux-gnueabi g++-arm-linux-gnueabi gcc-multilib
       
       - name: Build x-ui
         run: |
