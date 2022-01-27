@@ -65,8 +65,8 @@ jobs:
       - name: Get project dependencies
         run: |
           go mod download
-          apt update
-          apt install -y libblkid-dev gcc 
+          sudo apt update
+          sudo apt install -y libblkid-dev gcc 
       
       - name: Build x-ui
         run: |
