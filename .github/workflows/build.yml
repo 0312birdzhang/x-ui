@@ -46,7 +46,7 @@ jobs:
       GOARCH: ${{ matrix.goarch }}
       GOARM: ${{ matrix.goarm }}
       CGO_ENABLED: 1
-      CC: ${{ matrix.goarm }}-${{ matrix.goos }}-gnueabi-gcc
+      CC: ${{ matrix.goarch }}-${{ matrix.goos }}-gnueabi-gcc
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v2
