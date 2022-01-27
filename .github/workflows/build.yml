@@ -45,7 +45,8 @@ jobs:
       GOOS: ${{ matrix.goos }}
       GOARCH: ${{ matrix.goarch }}
       GOARM: ${{ matrix.goarm }}
-      #CGO_ENABLED: 0
+      CGO_ENABLED: 1
+      CC: ${{ matrix.goarm }}-${{ matrix.goos }}-gnueabi-gcc
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v2
@@ -66,7 +67,7 @@ jobs:
         run: |
           go mod download
           sudo apt update
-          sudo apt install -y libblkid-dev gcc 
+          sudo apt install -y libblkid-dev gcc gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
       
       - name: Build x-ui
         run: |
