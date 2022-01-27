@@ -46,7 +46,6 @@ jobs:
       GOARCH: ${{ matrix.goarch }}
       GOARM: ${{ matrix.goarm }}
       CGO_ENABLED: 1
-      CC: ${{ matrix.goarch }}-${{ matrix.goos }}-gnueabi-gcc
     steps:
       - name: Checkout codebase
         uses: actions/checkout@v2
@@ -58,6 +57,7 @@ jobs:
           echo "GOOS: $GOOS, GOARCH: $GOARCH, GOARM: $GOARM, GOMIPS: $GOMIPS, RELEASE_NAME: $_NAME"
           echo "::set-output name=ASSET_NAME::$_NAME"
           echo "ASSET_NAME=$_NAME" >> $GITHUB_ENV
+
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
@@ -71,6 +71,14 @@ jobs:
       
       - name: Build x-ui
         run: |
+          if [[ $GOARM == 'arm64' ]]; then
+              echo "CC=aarch64-linux-gnueabi-gcc" >> "$GITHUB_ENV"
+              echo "::set-env CC=aarch64-linux-gnueabi-gcc"
+          elif [[ $GOARM == 'arm' ]]; then
+              echo "::set-env CC=arm-linux-gnueabi-gcc"
+          else
+              echo "skip others"
+          fi
           mkdir -p build_assets
           go build -a -ldflags "-linkmode external -extldflags '-static' -s -w" -o build_assets/x-ui main.go
     
