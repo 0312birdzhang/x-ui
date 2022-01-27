@@ -74,12 +74,12 @@ jobs:
           if [[ $GOARCH == 'arm64' ]]; then
               echo "CC=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
               echo "::set-env CC=aarch64-linux-gnu-gcc"
-              sudo apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libsqlite3-dev:arm64
+              sudo apt install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
               sudo dpkg --add-architecture arm64
           elif [[ $GOARCH == 'arm' ]]; then
               echo "CC=arm-linux-gnu-gcc" >> "$GITHUB_ENV"
               echo "::set-env CC=arm-linux-gnu-gcc"
-              sudo apt install -y  gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf libsqlite3-dev:armhf
+              sudo apt install -y  gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
               sudo dpkg --add-architecture armhf
           else
               echo "skip others"
